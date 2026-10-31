@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>KOMA · MangaStudio</title><link rel="stylesheet" href="/static/app.css?v=2026-10-31.1"></head>
+<body>
+<aside class="rail">
+  <a class="brand" href="/" aria-label="MangaStudio Start"><span class="brand-mark">K</span><span>KOMA<small>MANGA STUDIO</small></span></a>
+  <div class="rail-label">DEINE BIBLIOTHEK <button class="icon" id="newBook" title="Buch hochladen">＋</button></div>
+  <div id="bookList"></div>
+  <div id="chapterNav"></div>
+  <div class="rail-bottom"><span class="local-dot"></span> Lokal auf deinem Rechner<br><button class="quiet" id="settingsButton">⚙ Verbindung & Modelle</button><div class="connection" id="connectionLabel">Verbindung wird geprüft …</div></div>
+</aside>
+<main>
+  <header class="topbar"><span>DEINE GESCHICHTE. EIN NEUES FORMAT.</span><div class="top-actions"><span class="status-pill" id="connectionPill">COMFYUI · PRÜFEN</span><span class="tag">LOCAL WORKSPACE</span></div></header>
+  <div id="content"></div>
+</main>
+<input id="bookFile" type="file" accept=".docx,.txt,.md" hidden>
+<dialog id="modal"><div id="modalContent"></div></dialog>
+<div id="toast" role="status"></div>
+<script src="/static/lettering.js?v=2026-10-31.1"></script>
+<script src="/static/dramaturgy.js?v=2026-10-31.1"></script>
+<script src="/static/page_flow.js?v=2026-10-31.1"></script>
+<script src="/static/book_style.js?v=2026-10-31.1"></script>
+<script src="/static/app.js?v=2026-10-31.1"></script>
+</body></html>
