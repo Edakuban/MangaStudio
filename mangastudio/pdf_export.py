@@ -11,6 +11,7 @@ from reportlab.lib.units import mm
 from .layout import book_pages, PAGE_W, PAGE_H
 from .lettering import FONT, panel_lettering
 from .print_quality import pixels_for_points,PAGE_WIDTH_MM,PAGE_HEIGHT_MM
+from .publication import draw_publication, publication_count
 
 def draw_lettering(c, lettering, x, top):
     for bubble in lettering['bubbles']:
@@ -140,7 +141,10 @@ def export_pdf(store, project, chapters, target, draft=False):
     c = canvas.Canvas(str(temporary), pagesize=(page_w, page_h), pageCompression=1)
     c.setTitle(project['title'])
     c.setAuthor('MangaStudio')
+    c.setViewerPreference('Direction', 'R2L' if project['direction'] == 'rtl' else 'L2R')
+    c._doc.Catalog.setPageLayout('TwoPageLeft' if project['direction'] == 'rtl' else 'TwoPageRight')
     try:
+        draw_publication(c,store,project,page_w,page_h,draft)
         for page in pages:
             c.setFillColorRGB(1, 1, 1)
             c.rect(0, 0, page_w, page_h, fill=1, stroke=0)
@@ -148,7 +152,7 @@ def export_pdf(store, project, chapters, target, draft=False):
             c.setFont(FONT, 8)
             if page.get('layout') != 'full_bleed':
                 c.drawString(24, page_h-25, page['chapter_title'][:90])
-                c.drawRightString(page_w-24, 17, f"{page['number']:02}")
+                c.drawRightString(page_w-24, 17, f"{page['number']+publication_count(project):02}")
             if draft:
                 c.setFont(FONT, 6)
                 c.drawString(24, 17, 'LAYOUT-ENTWURF / fehlende Bilder als Platzhalter')
@@ -202,4 +206,4 @@ def export_pdf(store, project, chapters, target, draft=False):
         temporary.replace(target)
     finally:
         temporary.unlink(missing_ok=True)
-    return len(pages)
+    return len(pages)+publication_count(project)

@@ -301,3 +301,55 @@ test('manual and base filenames never receive an automatic permissive model lice
  vm.runInContext('refreshModelLicense()',context);
  assert.doesNotMatch(nodes.get('#settingsModelLicense').innerHTML,/kommerzielle Nutzung erlaubt/);
 });
+
+
+test('export dialog supports several variants, grayscale only for color, and explicit draft mode',()=>{
+ const {context,nodes}=harness();
+ vm.runInContext(`S.book.exports=[];S.book.monochrome=false;exportModal()`,context);
+ let html=nodes.get('#modalContent').innerHTML;
+ for(const kind of ['pdf','print_pdf','grayscale','pages','webcomic'])assert.match(html,new RegExp('value="'+kind+'"'));
+ assert.match(html,/data-action="export-selected"/);
+ assert.match(html,/id="exportDraft"/);
+ assert.doesNotMatch(html,/value="grayscale" disabled/);
+ vm.runInContext(`S.book.monochrome=true;exportModal()`,context);
+ html=nodes.get('#modalContent').innerHTML;
+ assert.match(html,/value="grayscale" disabled/);
+});
+
+test('multi-export submits all selected formats once and downloads a single bundle',async()=>{
+ const {context,nodes}=harness();
+ let clicked=0;
+ context.document.body={appendChild(){}};
+ context.document.createElement=()=>({click(){clicked++},remove(){}});
+ context.document.querySelectorAll=()=>[{value:'pdf'},{value:'pages'},{value:'webcomic'},{value:'grayscale',disabled:true}];
+ context.document.querySelector('#exportDraft').value='draft';
+ vm.runInContext(`calls=[];savePlan=async()=>{};api=async(url,options)=>{if(!options?.body)return S.book;calls.push({url,data:JSON.parse(options.body)});return {path:'books/book/exports/run/bundle.zip',name:'bundle.zip',pages:2,files:[{path:'x.pdf',name:'x.pdf',label:'PDF'},{path:'pages.zip',name:'pages.zip',label:'Seitenbilder'}]}};`,context);
+ const button={disabled:false};context.exportButton=button;
+ await vm.runInContext('exportSelected(exportButton)',context);
+ assert.equal(context.calls.length,1);
+ assert.deepEqual(Array.from(context.calls[0].data.formats),['pdf','pages','webcomic']);
+ assert.equal(context.calls[0].data.draft,true);
+ assert.equal(clicked,1);
+ assert.equal(button.disabled,false);
+ assert.match(nodes.get('#exportResult').innerHTML,/bundle.zip/);
+ context.document.querySelectorAll=()=>[];
+ assert.throws(()=>vm.runInContext('selectedExportFormats()',context),/mindestens ein/);
+});
+
+test('standard pages escape saved text and persist settings without accepting a file path',async()=>{
+ const {context,nodes}=harness();
+ vm.runInContext(`S.book.publication={enabled:true,title:'<Title>',imprint:'<script>Test</script>',cover_image:'cover.png'};exportModal()`,context);
+ const html=nodes.get('#modalContent').innerHTML;
+ assert.match(html,/id="publicationEnabled" type="checkbox" checked/);
+ assert.match(html,/&lt;script&gt;Test&lt;\/script&gt;/);
+ assert.match(html,/id="publicationCover"/);
+ assert.match(html,/4 Impressum/);
+ context.document.querySelector('#publicationEnabled').checked=true;
+ for(const [key,value] of Object.entries({Title:'Titel',Subtitle:'Band 1',Author:'Autor',Imprint:'Mein Impressum'}))context.document.querySelector('#publication'+key).value=value;
+ vm.runInContext(`calls=[];api=async(url,options)=>{const data=JSON.parse(options.body);calls.push({url,data});return {...data,cover_image:'cover.png'}}`,context);
+ await vm.runInContext('savePublication()',context);
+ assert.equal(context.calls[0].url,'/api/projects/book/publication');
+ assert.equal(context.calls[0].data.imprint,'Mein Impressum');
+ assert.ok(!('cover_image' in context.calls[0].data));
+ assert.equal(vm.runInContext('S.book.publication.cover_image',context),'cover.png');
+});

@@ -89,6 +89,35 @@ Panel-Druckfläche benötigt mehr Pixel und kann eine Neuerzeugung erforderlich 
 Ein **Layout-Entwurf** erlaubt fehlende oder noch unzureichende Bilder; der fertige
 Export prüft unter anderem Aktualität, Auflösung und Sprechblasenprobleme.
 
+## Mehrere Ausgaben exportieren
+
+Im Exportdialog lassen sich mehrere Varianten mit einer Aktion erzeugen:
+Lese-PDF im aktuellen Farbmodus, eine separate Druck-PDF, zusätzlich Graustufen-PDF bei farbigen Büchern,
+nummerierte vollständige Seiten als PNG-ZIP (300 dpi) und ein Webcomic-ZIP.
+Die Lese-PDF bleibt chronologisch und enthält Hinweise zur Leserichtung und Doppelseitenanzeige für PDF-Reader.
+Unter „Standardseiten“ lassen sich pro Buch optional vier Vorspannseiten aktivieren:
+Coverbild (oder generierte Titelseite), Leerseite, Innentitel und Impressum auf Seite 4
+in Leserichtung. Die Story beginnt auf Seite 5. Titel, Untertitel/Band, Autorname und
+Impressum sind frei editierbar; ein Coverbild lässt sich hochladen und wieder entfernen.
+Ohne Bild wird Seite 1 aus den Titelangaben gesetzt. Coverbilder werden vollständig proportional
+eingepasst und benötigen für die fertige Ausgabe 300 dpi. Zu lange Texte werden beim Export
+mit einer Meldung abgelehnt. Copyright, ISBN und Verlagsangaben selbst für die jeweilige Ausgabe eintragen.
+Der Vorspann wird in alle PDF-Varianten und Seitenbilder übernommen; der Webcomic enthält nur die Story.
+In der RTL-Druck-PDF wird der Vorspann zusammen mit der Story umgekehrt, das Impressum bleibt
+dadurch die vierte Seite in Leserichtung. Das Cover im Buchblock ersetzt keinen separaten Druckumschlag.
+Die Druck-PDF kehrt bei RTL die vollständigen Seiten um: Die erste Storyseite liegt am Dateiende.
+Bei ungerader Seitenzahl wird vor dem Umkehren eine Leerseite am Storyende ergänzt,
+damit die Doppelseiten erhalten bleiben. Bei LTR bleibt die Seitenfolge chronologisch.
+Die Druck-PDF nutzt den aktuellen Farbmodus und enthält weder Umschlag noch Druckbogen-Ausschießung.
+Sie ist für Druckereien gedacht, die den Buchblock in westlicher Reihenfolge verarbeiten;
+die konkreten Vorgaben des Anbieters sowie Seitenpaare, zusätzliche Leerseiten und Umschlag
+müssen in dessen Druckvorschau geprüft werden. Sie ist keine automatisch BoD-zertifizierte Druckvorlage.
+Der Webcomic enthält eine offline nutzbare `index.html` und nummerierte
+Panelbilder mit Dialogen in Buchreihenfolge untereinander. Mehrere Varianten
+werden zusätzlich zu einem gemeinsamen Downloadpaket zusammengefasst.
+Für unvollständige Stände bleibt der ausdrücklich markierte Layout-Entwurf verfügbar.
+Die Auswahl verändert weder den Buchfarbmodus noch die Originalbilder.
+
 ## Daten und Sicherungen
 
 Standardmäßig liegen Datenbank, importierte Bücher, Charakterbilder, Panelbilder

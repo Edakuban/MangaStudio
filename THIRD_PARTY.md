@@ -16,7 +16,7 @@ Client sind historische interne Namen.
 ## Python-Abhängigkeiten
 
 MangaStudio verwendet unter anderem FastAPI, Uvicorn, HTTPX, python-multipart,
-Pydantic, defusedxml, Pillow, ReportLab und pypdf; pytest wird für Tests verwendet.
+Pydantic, defusedxml, Pillow, ReportLab, pypdf und pypdfium2 (mit PDFium); pytest wird für Tests verwendet.
 Direkte Abhängigkeiten stehen in `requirements.txt`, die festgeschriebenen
 Versionen einschließlich transitiver Abhängigkeiten in `requirements-lock.txt`.
 

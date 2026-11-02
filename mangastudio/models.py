@@ -91,6 +91,14 @@ class BookSettings(StrictModel):
     monochrome: bool = True
 
 
+class PublicationSettings(StrictModel):
+    enabled: bool = False
+    title: str = Field(default='', max_length=300)
+    subtitle: str = Field(default='', max_length=300)
+    author: str = Field(default='', max_length=160)
+    imprint: str = Field(default='', max_length=10000)
+
+
 class Settings(StrictModel):
     comfy_url: str = 'http://127.0.0.1:8188'
     text_model: str = 'qwen3.5_4b_bf16.safetensors'
@@ -113,6 +121,7 @@ class GenerateRequest(StrictModel):
 
 class ExportRequest(StrictModel):
     draft: bool = False
+    formats: list[Literal["pdf", "print_pdf", "grayscale", "pages", "webcomic"]] = Field(default_factory=lambda: ["pdf"], min_length=1, max_length=5)
 
 
 class PlanRequest(StrictModel):

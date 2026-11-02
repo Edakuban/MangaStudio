@@ -12,7 +12,7 @@ from .models import PlanChunk, uid
 from .print_quality import PRINT_DPI,panel_pixel_size,image_is_print_ready
 from .vendor.comfy import ComfyClient
 
-ENGINE_VERSION = '2026-10-28.1'
+ENGINE_VERSION = '2026-10-31.2'
 
 
 class StoryboardOrderError(ValueError):

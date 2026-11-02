@@ -9,11 +9,11 @@ from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps, UnidentifiedImageError
 from .store import Store, ROOT
 from .models import (Settings, CharacterInput, BookSettings, EditPlan, GenerateRequest,
-                     ExportRequest, PlanRequest, PlanChunk, AcceptCharacterRender, uid)
+                     ExportRequest, PlanRequest, PlanChunk, AcceptCharacterRender, PublicationSettings, uid)
 from .importer import import_book, chunks
 from .engine import Worker, validate_chunk, image_signature, ENGINE_VERSION
 from .layout import book_pages, pages_for_chapter
-from .pdf_export import export_pdf
+from .export_bundle import create_exports, EXPORT_LOCK
 from .vendor.comfy import ComfyClient
 from .dramaturgy import ReviewDecision, ReviewConflict, story_signature, review_state, decide_suggestion
 from .page_flow import FlowPlan,FlowDecision,context_for,flow_state,preview_flow,decide_flow,spreads,edit_active_flow
@@ -94,7 +94,7 @@ def create_app(data_root=None, start_worker=True):
                 if image.width*image.height > 40_000_000 or min(image.size) < 64:
                     raise ValueError('Bildgröße muss zwischen 64 Pixeln und 40 Megapixeln liegen.')
                 image = ImageOps.exif_transpose(image).convert('RGB')
-                image.thumbnail((4096,4096) if folder=='panels' else (2560,2560))
+                image.thumbnail((4096,4096) if folder in ('panels','covers') else (2560,2560))
                 relative = f'books/{project_id}/{folder}/{uid()}.png'
                 path = store.asset(relative)
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -168,6 +168,32 @@ def create_app(data_root=None, start_worker=True):
         value.update(settings.model_dump())
         store.write('projects', value)
         return value
+
+    @app.put('/api/projects/{ident}/publication')
+    def publication_settings(ident: str, settings: PublicationSettings):
+        idle(ident)
+        value = store.get('projects', ident)
+        cover = value.get('publication', {}).get('cover_image', '')
+        value['publication'] = {**settings.model_dump(), 'cover_image': cover}
+        store.write('projects', value)
+        return value['publication']
+
+    @app.post('/api/projects/{ident}/publication/cover')
+    async def publication_cover(ident: str, file: UploadFile = File(...)):
+        idle(ident)
+        value = store.get('projects', ident)
+        path = save_image(await read_upload(file, 25*1024*1024), ident, 'covers')
+        value.setdefault('publication', {})['cover_image'] = path
+        store.write('projects', value)
+        return value['publication']
+
+    @app.delete('/api/projects/{ident}/publication/cover')
+    def remove_publication_cover(ident: str):
+        idle(ident)
+        value = store.get('projects', ident)
+        value.setdefault('publication', {}).pop('cover_image', None)
+        store.write('projects', value)
+        return value['publication']
 
     @app.post('/api/projects/{ident}/characters')
     async def character_create(ident: str, name: str = Form(...), description: str = Form(...),
@@ -487,9 +513,13 @@ def create_app(data_root=None, start_worker=True):
                 raise ValueError('Einige Panelbilder fehlen oder passen nicht mehr zum aktuellen Prompt/Charakterstand. Bilder aktualisieren oder Entwurf exportieren.')
             if any(not image_is_print_ready(store,p,p['box']) for page in book_pages(chapters,project['direction']) for p in page['panels']):
                 raise ValueError('Einige Panelbilder sind für ihre Druckgröße bei 300 dpi zu klein. Bilder neu erzeugen oder einen Layout-Entwurf exportieren.')
-        relative = f'books/{ident}/exports/{uid()}{"-entwurf" if options.draft else "-manga"}.pdf'
-        count = export_pdf(store, project, chapters, store.asset(relative), options.draft)
-        value = {'path': relative, 'pages': count, 'draft': options.draft}
+        if not EXPORT_LOCK.acquire(blocking=False):
+            raise HTTPException(409, 'Ein Export läuft bereits. Bitte dessen Abschluss abwarten.')
+        try:
+            value = create_exports(store, project, chapters, options.formats, options.draft)
+        finally:
+            EXPORT_LOCK.release()
+        project = store.get('projects', ident)
         project.setdefault('exports', []).append(value)
         store.write('projects', project)
         return value
@@ -497,7 +527,7 @@ def create_app(data_root=None, start_worker=True):
     @app.get('/assets/{relative:path}')
     def asset(relative: str):
         path = store.asset(relative)
-        if path.suffix.lower() not in {'.png', '.jpg', '.jpeg', '.webp', '.pdf'} or not path.is_file():
+        if path.suffix.lower() not in {'.png', '.jpg', '.jpeg', '.webp', '.pdf', '.zip'} or not path.is_file():
             raise HTTPException(404)
         return FileResponse(path)
 
